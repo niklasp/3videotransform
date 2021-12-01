@@ -6,6 +6,10 @@ import { monitorScroll, loadModels } from './util';
 //import shaders
 import vertexShader from '../shaders/vertex.glsl';
 import fragmentShader from '../shaders/fragment.glsl';
+import videoShader from '../shaders/videoshader.glsl';
+
+import image from '../../public/img1.jpeg';
+import dat from 'dat.gui';
 
 //import your models
 import model from '../models/model.glb';
@@ -23,9 +27,13 @@ export default class Sketch {
     const near = 0.01;
     const far = 100;
 
+    const frustumSize = 1;
+
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera( fov, this.width / this.height, near, far );
-    this.camera.position.z = 25;
+    // this.camera = new THREE.PerspectiveCamera( fov, this.width / this.height, near, far );
+    
+    this.camera = new THREE.OrthographicCamera( - frustumSize / 2, frustumSize / 2, frustumSize / 2, - frustumSize / 2 );
+    this.camera.position.z = -1;
 
     // const gridHelper = new THREE.GridHelper( 100, 100 );
     // this.scene.add( gridHelper );
@@ -42,6 +50,7 @@ export default class Sketch {
 
     this.controls = new OrbitControls( this.camera, this.renderer.domElement );
 
+    this.settings();
     this.setupListeners();
     this.addObjects();
     this.render();
@@ -63,41 +72,63 @@ export default class Sketch {
     this.camera.updateProjectionMatrix();
   }
 
-  addObjects() {
-    this.geometry = new THREE.BoxGeometry( 0.4, 0.4, 0.4 );
+  settings() {
+    this.settings = {
+      progress: 0.0,
+      scale: 0.5,
+    };
+    this.gui = new dat.GUI();
+    this.gui.add( this.settings, "progress", 0, 1, 0.01 );
+    this.gui.add( this.settings, "scale", 0, 2, 0.01 );
+  }
 
-    this.material = new THREE.ShaderMaterial({
-      uniforms: {
-        u_time: { value: 0.0 },
-      },
-      side: THREE.DoubleSide,
-      fragmentShader,
-      vertexShader,
-    });
+  addObjects() {
 
     // this.mesh = new THREE.Mesh( this.geometry, this.material );
     // this.scene.add( this.mesh );
 
-    loadModels(
-      model,
-      ( gltf ) => {
-        console.log( 'hello', gltf );
-        this.scene.add( gltf.scene );
-        gltf.scene.scale.set( 0.5, 0.5, 0.5 );
+    // loadModels(
+    //   model,
+    //   ( gltf ) => {
+    //     console.log( 'hello', gltf );
+    //     this.scene.add( gltf.scene );
+    //     gltf.scene.scale.set( 0.5, 0.5, 0.5 );
 
-        gltf.scene.traverse( o => {
-          if ( o.isMesh ) {
-            o.geometry.center();
-            o.material = this.material;
-          }
-        });
-      }
-    );
+    //     gltf.scene.traverse( o => {
+    //       if ( o.isMesh ) {
+    //         o.geometry.center();
+    //         o.material = this.material;
+    //       }
+    //     });
+    //   }
+    // );
+
+    this.videoDOM = document.getElementById('video-background');
+    this.video = new THREE.VideoTexture( this.videoDOM );
+    this.video.needsUpdate = true;
+
+    this.material = new THREE.ShaderMaterial({
+      uniforms: {
+        u_time: { value: 0.0 },
+        u_circleScale: { value: 0.5 },
+        u_video: { value: this.video },
+        u_viewport: { value: new THREE.Vector2( this.width, this.height ) },
+        u_image: { value: new THREE.TextureLoader().load( image ) },
+      },
+      side: THREE.DoubleSide,
+      fragmentShader: videoShader,
+      vertexShader,
+    });
+
+    this.geometry = new THREE.PlaneGeometry(1,1,1,1);
+    this.plane = new THREE.Mesh( this.geometry, this.material );
+    this.scene.add( this.plane );
   }
 
   render() {
     this.time += 0.05;
     this.material.uniforms.u_time.value = this.time;
+    this.material.uniforms.u_circleScale.value = this.settings.scale;
     // this.mesh.rotation.x = this.time / 20;
     // this.mesh.rotation.y = this.time / 10;
 
