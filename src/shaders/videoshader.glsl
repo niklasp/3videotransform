@@ -70,7 +70,7 @@ void main() {
   vec4 video = texture2D( u_video, newUv );
   vec4 image = texture2D( u_image, newUv );
 
-  vec4 final = mix( video, image, swirl);
+  vec4 final = mix( video, vec4(0.), swirl);
 
   gl_FragColor = final;
   // gl_FragColor = vec4( swirlDistort, 0., 1.);

@@ -41,11 +41,12 @@ export default class Sketch {
     this.renderer = new THREE.WebGLRenderer( {
       antialias: false,
       autoClear: true,
+      alpha: true,
       powerPreference: "high-performance",
     } );
 
     this.renderer.setSize( this.width, this.height );
-    this.renderer.setClearColor(0xeeeeee, 1);
+    this.renderer.setClearColor( 0x000000, 0 ); // the default
     this.container.appendChild( this.renderer.domElement );
 
     this.controls = new OrbitControls( this.camera, this.renderer.domElement );
